@@ -1,0 +1,281 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Tajawal:wght@300;400;500;700;800&display=swap');
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+@theme {
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Tajawal', sans-serif;
+
+  /* Palette */
+  --color-cream:        #faf7f2;
+  --color-warm:         #fdf9f4;
+  --color-amber:        #d4773a;
+  --color-amber-light:  #e8a96e;
+  --color-amber-dark:   #a8521a;
+  --color-charcoal:     #1c2630;
+  --color-stone:        #6b7280;
+  --color-rust:         #e05c3a;
+  --color-sage:         #4d908e;
+  --color-coral:        #e8623a;
+  --color-gold:         #f0c060;
+  --color-sand:         #f5d9a8;
+  --color-surface:      #ffffff;
+  --color-border:       #ede5d8;
+
+  /* Backgrounds */
+  --page-background: radial-gradient(ellipse 80% 60% at 90% -10%, rgba(240,192,96,0.14) 0%, transparent 50%),
+                     radial-gradient(ellipse 70% 50% at -10% 80%,  rgba(232,98,58,0.10) 0%, transparent 50%),
+                     linear-gradient(175deg, #fffdf9 0%, #faf6ef 55%, #f5f0e8 100%);
+
+  /* Glassmorphism card */
+  --glass-bg:      rgba(255, 255, 255, 0.75);
+  --glass-border:  rgba(255, 255, 255, 0.55);
+  --glass-shadow:  0 24px 64px rgba(30, 42, 55, 0.10);
+
+  /* Radius system */
+  --radius-sm:   0.75rem;
+  --radius-md:   1.25rem;
+  --radius-lg:   1.75rem;
+  --radius-xl:   2.25rem;
+  --radius-full: 9999px;
+}
+
+/* ─── Reset & Base ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--page-background);
+  background-attachment: fixed;
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#root { min-height: 100vh; }
+
+h1, h2, h3, h4 { font-family: var(--font-display); }
+
+input, textarea, select, button { font-family: inherit; }
+
+textarea { line-height: 1.9; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--color-amber-light); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-amber); }
+
+/* ─── Selection ─────────────────────────────────────────────────────────────── */
+::selection { background: rgba(240,192,96,0.32); color: var(--color-charcoal); }
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Utility Classes ────────────────────────────────────────────────────────── */
+.animate-fadeUp       { animation: fadeUp       0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fadeDown     { animation: fadeDown     0.4s  ease both; }
+.animate-fadeIn       { animation: fadeIn       0.35s ease both; }
+.animate-scaleIn      { animation: scaleIn      0.4s  cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-slideInRight { animation: slideInRight 0.4s  cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-float        { animation: float        3.5s  ease-in-out infinite; }
+.animate-spin         { animation: spin         0.9s  linear infinite; }
+
+.stagger-1 { animation-delay: 0.06s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.18s; }
+.stagger-4 { animation-delay: 0.24s; }
+.stagger-5 { animation-delay: 0.30s; }
+.stagger-6 { animation-delay: 0.36s; }
+
+/* ─── Recipe Card ────────────────────────────────────────────────────────────── */
+.recipe-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+  transition:
+    transform  0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.38s ease,
+    border-color 0.3s ease;
+  will-change: transform, box-shadow;
+}
+
+.recipe-card:hover {
+  transform: translateY(-10px) scale(1.015);
+  box-shadow: 0 36px 80px rgba(30,42,55,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
+  border-color: rgba(212,119,58,0.35);
+}
+
+.recipe-card:active {
+  transform: translateY(-4px) scale(1.005);
+}
+
+/* ─── Skeleton Shimmer ───────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f0ebe3 25%, #faf6ef 50%, #f0ebe3 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ─── Recording Pulse ────────────────────────────────────────────────────────── */
+.recording-pulse { position: relative; }
+
+.recording-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.5);
+  animation: pulse-ring 1.2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* ─── Glass Panel ────────────────────────────────────────────────────────────── */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ─── Gradient Button ────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-coral) 0%, var(--color-gold) 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 12px 32px rgba(212,119,58,0.3);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+
+.btn-primary:hover  { transform: translateY(-2px) scale(1.02); box-shadow: 0 18px 40px rgba(212,119,58,0.38); filter: brightness(1.06); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { opacity: 0.55; pointer-events: none; }
+
+/* ─── Ghost Button ───────────────────────────────────────────────────────────── */
+.btn-ghost {
+  background: rgba(255,255,255,0.85);
+  color: var(--color-charcoal);
+  border: 1px solid var(--color-border);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost:hover  { background: var(--color-warm); transform: translateY(-1px); }
+.btn-ghost:active { transform: scale(0.97); }
+
+/* ─── Form inputs ────────────────────────────────────────────────────────────── */
+.field-base {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: rgba(255,255,255,0.88);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--color-charcoal);
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  resize: none;
+}
+
+.field-base:focus {
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 3px rgba(212,119,58,0.12);
+  background: #fff;
+}
+
+.field-base.field-active {
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 3px rgba(212,119,58,0.12);
+  background: #fff;
+}
+
+.field-error {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgba(248,113,113,0.12) !important;
+}
+
+/* ─── Category Pill ──────────────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.3rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pill:hover   { transform: translateY(-1px); }
+.pill:active  { transform: scale(0.96); }
+
+/* ─── Hero Decorative Blobs ──────────────────────────────────────────────────── */
+.blob {
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  position: absolute;
+}
+
+/* ─── Section heading accent ─────────────────────────────────────────────────── */
+.section-accent {
+  display: inline-block;
+  width: 3px;
+  height: 1.1em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--color-coral), var(--color-gold));
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* ─── Mobile-first overrides ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .recipe-card:hover {
+    transform: translateY(-5px) scale(1.01);
+  }
+}
