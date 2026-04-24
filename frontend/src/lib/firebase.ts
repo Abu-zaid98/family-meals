@@ -11,6 +11,11 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate that the API key exists to prevent silent "auth/invalid-api-key" errors
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase Initialization Error: VITE_FIREBASE_API_KEY is missing. Check your environment variables.");
+}
+
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);

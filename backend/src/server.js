@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeFirebase } = require('./config/firebase');
 const recipeRoutes = require('./routes/recipes');
 
@@ -20,14 +21,21 @@ app.use('/recipes', recipeRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// Serve frontend static files in production
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// Wildcard route for SPA fallback (React Router refresh fix)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ success: false, message: err.message || 'Internal server error' });
 });
 
-// Only listen if not in production (Vercel handles the server in prod)
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-}
+// Render handles the server, so we must always listen
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
 module.exports = app;
