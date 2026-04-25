@@ -8,7 +8,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
-import { auth, db } from '../lib/firebase';
+import { auth, db } from '../firebase';
 
 interface AuthContextValue {
   user: User | null;

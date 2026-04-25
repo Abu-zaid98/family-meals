@@ -1,6 +1,6 @@
 import { ref, push, set, remove, onValue, get } from 'firebase/database';
 import type { Recipe } from '../types';
-import { db, auth } from '../lib/firebase';
+import { db, auth } from '../firebase';
 
 export const recipeService = {
   /**
