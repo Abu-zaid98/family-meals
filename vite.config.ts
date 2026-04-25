@@ -3,32 +3,17 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
+  plugins: [react(), tailwindcss()],
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/database'],
+    include: ['react', 'react-dom'],
+    exclude: ['@firebase/firestore'],
   },
   build: {
-    outDir: 'dist',
-    chunkSizeWarningLimit: 1000,
     commonjsOptions: {
       transformMixedEsModules: true,
-      include: [/node_modules/],
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'firebase/app', 'firebase/auth', 'firebase/database'],
-        },
-      },
     },
   },
 })
-
-
-
