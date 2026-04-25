@@ -7,4 +7,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-firebase': ['firebase/app', 'firebase/database', 'firebase/auth'],
+          'vendor-ui': ['framer-motion', 'lucide-react', 'react-icons'],
+        },
+      },
+    },
+  },
 });
+
