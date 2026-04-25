@@ -1,28 +1,26 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyCpAa67dxj3pF5nim0zLFJ6VDESU6xvi74",
-    authDomain: "todos-617b3.firebaseapp.com",
-    databaseURL: "https://todos-617b3-default-rtdb.firebaseio.com",
-    projectId: "todos-617b3",
-    storageBucket: "todos-617b3.firebasestorage.app",
-    messagingSenderId: "691011560373",
-    appId: "1:691011560373:web:911acf7d96c89219f0affc",
-    measurementId: "G-X6S4V5FYZF"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check for required config to avoid runtime crashes
+if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
+    console.warn("Firebase configuration is incomplete. Check your environment variables.");
+}
+
+// Initialize Firebase once
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
 export const auth = getAuth(app);
 export const db = getDatabase(app);
-console.log("ENV CHECK:", {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    db: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-});
+export default app;
