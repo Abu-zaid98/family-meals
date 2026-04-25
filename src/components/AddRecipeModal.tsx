@@ -3,7 +3,7 @@ import { recipeService } from '../services/recipeService';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { VoiceButton } from './VoiceButton';
 import { useAuth } from '../context/AuthContext';
-import type { Recipe } from '../types';
+
 
 interface Props {
   onClose: () => void;
@@ -76,7 +76,7 @@ export function AddRecipeModal({ onClose, onCreated, categories }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const recipe = await recipeService.create({
+      await recipeService.create({
         ...form,
         category: normalizedCategory,
       });

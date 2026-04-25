@@ -1,36 +1,23 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-import { getDatabase, Database } from "firebase/database";
+/*----*/
 
+import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
+import { getAuth } from "firebase/auth";
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    apiKey: "AIzaSyCpAa67dxj3pF5nim0zLFJ6VDESU6xvi74",
+    authDomain: "todos-617b3.firebaseapp.com",
+    databaseURL: "https://todos-617b3-default-rtdb.firebaseio.com",
+    projectId: "todos-617b3",
+    storageBucket: "todos-617b3.firebasestorage.app",
+    messagingSenderId: "691011560373",
+    appId: "1:691011560373:web:911acf7d96c89219f0affc",
+    measurementId: "G-X6S4V5FYZF"
 };
 
-// Validate required environment variables to prevent runtime errors
-const requiredKeys = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_DATABASE_URL'];
-const missingKeys = requiredKeys.filter(key => !import.meta.env[key]);
+const app = initializeApp(firebaseConfig);
 
-if (missingKeys.length > 0) {
-    console.error(`CRITICAL ERROR: Missing required Firebase environment variables: ${missingKeys.join(', ')}`);
-    console.warn("Please ensure your .env file or Vercel Environment Variables are correctly configured.");
-}
-
-// Initialize Firebase as a singleton
-let app: FirebaseApp;
-try {
-    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-} catch (error) {
-    console.error("Firebase initialization failed:", error);
-    throw error;
-}
-
-export const auth: Auth = getAuth(app);
-export const db: Database = getDatabase(app);
-export default app;
+// 👇 هذا هو المهم
+export const db = getDatabase(app);
+export const auth = getAuth(app);

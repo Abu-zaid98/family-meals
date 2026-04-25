@@ -15,7 +15,7 @@ export function AuthModal({ mode: initialMode, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submitLabel = mode === 'login' ? 'سجّل دخولك الآن' : 'ابدأ رحلتك معنا';
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
