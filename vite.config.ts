@@ -18,6 +18,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     commonjsOptions: {
       transformMixedEsModules: true,
+      include: [/node_modules/],
     },
     rollupOptions: {
       output: {
@@ -28,5 +29,6 @@ export default defineConfig({
     },
   },
 })
+
 
 
