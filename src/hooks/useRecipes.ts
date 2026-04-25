@@ -8,16 +8,18 @@ export function useRecipes() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    const unsubscribe = recipeService.subscribeToAllRecipes(
+      (data) => {
+        setRecipes(data);
+        setError(null);
+        setLoading(false);
+      },
+      (message) => {
+        setError(message);
+        setLoading(false);
+      }
+    );
 
-    // Subscribe to all recipes in real-time
-    const unsubscribe = recipeService.subscribeToAllRecipes((data) => {
-      setRecipes(data);
-      setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 

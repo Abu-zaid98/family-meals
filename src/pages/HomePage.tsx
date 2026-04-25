@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRecipes } from '../hooks/useRecipes';
 import { RecipeCard } from '../components/RecipeCard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
@@ -6,10 +6,9 @@ import { AddRecipeModal } from '../components/AddRecipeModal';
 import { AuthModal } from '../components/AuthModal';
 import { useAuth } from '../context/AuthContext';
 import type { Recipe } from '../types';
-import { FiLogOut } from 'react-icons/fi';
 
 /* ─── Stat Card ─────────────────────────────────────────────────────────────── */
-function StatCard({ value, label, sub }: { value: React.ReactNode; label: string; sub: string }) {
+function StatCard({ value, label, sub }: { value: ReactNode; label: string; sub: string }) {
   return (
     <div className="rounded-[1.6rem] border border-white/14 bg-white/10 p-5 shadow-[0_20px_50px_rgba(10,20,30,0.18)] backdrop-blur-xl">
       <p className="text-xs font-bold tracking-wide text-white/65 uppercase">
@@ -138,8 +137,10 @@ export function HomePage() {
                     className="btn-ghost flex items-center justify-center rounded-full px-3 sm:px-4 py-2 text-xs font-bold bg-red-500"
                   >
                     <span className="hidden sm:inline">خروج</span>
-                    <span className="sm:hidden filter grayscale brightness-50">
-                      <FiLogOut />
+                    <span className="sm:hidden filter grayscale brightness-50" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M6 2.75A1.75 1.75 0 0 1 7.75 1h3.5A1.75 1.75 0 0 1 13 2.75v10.5A1.75 1.75 0 0 1 11.25 15h-3.5A1.75 1.75 0 0 1 6 13.25V11.5a.75.75 0 0 1 1.5 0v1.75a.25.25 0 0 0 .25.25h3.5a.25.25 0 0 0 .25-.25V2.75a.25.25 0 0 0-.25-.25h-3.5a.25.25 0 0 0-.25.25V4.5A.75.75 0 0 1 6 4.5V2.75ZM2.22 8.53a.75.75 0 0 1 0-1.06l2.5-2.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h4.69a.75.75 0 0 1 0 1.5H4.56l1.22 1.22a.75.75 0 1 1-1.06 1.06l-2.5-2.5Z" />
+                      </svg>
                     </span>
                   </button>
                 </div>

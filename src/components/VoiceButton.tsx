@@ -7,6 +7,8 @@ interface Props {
   error?: string | null;
 }
 
+const AUDIO_BARS = [14, 24, 18, 28, 16];
+
 export function VoiceButton({ isRecording, onStart, onStop, label, isActive = false, error }: Props) {
   return (
     <div className="space-y-3 animate-fadeIn">
@@ -55,8 +57,8 @@ export function VoiceButton({ isRecording, onStart, onStop, label, isActive = fa
       {isRecording && (
         <div className="animate-fadeUp flex items-center gap-3 bg-amber-50/80 p-3 rounded-2xl border border-amber-100 shadow-inner">
           <div className="flex space-x-1 space-x-reverse items-center justify-center">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="w-1 bg-amber-400 rounded-full animate-pulse" style={{ height: `${Math.random() * 20 + 8}px`, animationDelay: `${i * 0.15}s` }} />
+            {AUDIO_BARS.map((height, index) => (
+              <div key={height} className="w-1 bg-amber-400 rounded-full animate-pulse" style={{ height: `${height}px`, animationDelay: `${(index + 1) * 0.15}s` }} />
             ))}
           </div>
           <p className="text-xs text-amber-dark font-bold">

@@ -3,6 +3,7 @@ import { recipeService } from '../services/recipeService';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import { VoiceButton } from './VoiceButton';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
 
 
 interface Props {
@@ -82,8 +83,8 @@ export function AddRecipeModal({ onClose, onCreated, categories }: Props) {
       });
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'تعذّر إضافة الوصفة.');
+    } catch (error) {
+      setError(getErrorMessage(error, 'تعذّر إضافة الوصفة.'));
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { recipeService } from '../services/recipeService';
 import type { Recipe } from '../types';
+import { getErrorMessage } from '../utils/errors';
 
 interface Props {
   recipe: Recipe;
@@ -60,8 +61,8 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
       });
       onUpdated(updatedRecipe);
       setIsEditing(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'تعذّر تعديل الوصفة.');
+    } catch (error) {
+      setError(getErrorMessage(error, 'تعذّر تعديل الوصفة.'));
     } finally {
       setSubmitting(false);
     }
@@ -75,8 +76,8 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
       onDeleted();
       setShowDeleteConfirm(false);
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'تعذّر حذف الوصفة.');
+    } catch (error) {
+      setError(getErrorMessage(error, 'تعذّر حذف الوصفة.'));
       setShowDeleteConfirm(false);
     } finally {
       setSubmitting(false);

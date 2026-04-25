@@ -1,6 +1,10 @@
 import { ref, push, set, remove, onValue, get } from 'firebase/database';
 import type { Recipe } from '../types';
 import { db, auth } from '../firebase';
+import { getErrorMessage } from '../utils/errors';
+
+type RecipeRecord = Record<string, Omit<Recipe, 'id'>>;
+type UserRecipeRecord = Record<string, RecipeRecord>;
 
 export const recipeService = {
   /**
@@ -38,53 +42,61 @@ export const recipeService = {
   /**
    * Subscribe to real-time updates for recipes of a specific user (or current user if not provided)
    */
-  subscribeToRecipes(callback: (recipes: Recipe[]) => void, userId?: string) {
+  subscribeToRecipes(callback: (recipes: Recipe[]) => void, userId?: string, onError?: (message: string) => void) {
     const uid = userId || auth.currentUser?.uid;
     if (!uid) return () => {};
 
     const recipeRef = ref(db, `recipes/${uid}`);
     
-    return onValue(recipeRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        callback([]);
-        return;
+    return onValue(
+      recipeRef,
+      (snapshot) => {
+        const data = snapshot.val() as RecipeRecord | null;
+        if (!data) {
+          callback([]);
+          return;
+        }
+
+        const recipes = Object.entries(data)
+          .map(([id, value]) => ({ ...value, id }))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        callback(recipes);
+      },
+      (error) => {
+        onError?.(getErrorMessage(error, 'تعذّر تحميل الوصفات.'));
       }
-
-      const recipes: Recipe[] = Object.entries(data).map(([id, val]: [string, any]) => ({
-        ...val,
-        id,
-      })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      callback(recipes);
-    });
+    );
   },
 
   /**
    * Get all recipes for all users (Admin view or global feed)
    * Note: This might be expensive if data is huge, but fine for small apps.
    */
-  subscribeToAllRecipes(callback: (recipes: Recipe[]) => void) {
+  subscribeToAllRecipes(callback: (recipes: Recipe[]) => void, onError?: (message: string) => void) {
     const recipesRef = ref(db, 'recipes');
 
-    return onValue(recipesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        callback([]);
-        return;
+    return onValue(
+      recipesRef,
+      (snapshot) => {
+        const data = snapshot.val() as UserRecipeRecord | null;
+        if (!data) {
+          callback([]);
+          return;
+        }
+
+        const allRecipes = Object.values(data)
+          .flatMap((userRecipes) =>
+            Object.entries(userRecipes).map(([id, value]) => ({ ...value, id }))
+          )
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        callback(allRecipes);
+      },
+      (error) => {
+        onError?.(getErrorMessage(error, 'تعذّر تحميل الوصفات.'));
       }
-
-      // data is { userId: { recipeId: recipe } }
-      const allRecipes: Recipe[] = [];
-      Object.values(data).forEach((userRecipes: any) => {
-        Object.entries(userRecipes).forEach(([id, val]: [string, any]) => {
-          allRecipes.push({ ...val, id });
-        });
-      });
-
-      allRecipes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      callback(allRecipes);
-    });
+    );
   },
 
   async update(id: string, payload: Partial<Recipe>): Promise<Recipe> {

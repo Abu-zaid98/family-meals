@@ -1,4 +1,43 @@
 import { useState, useRef, useCallback } from 'react';
+import { getErrorMessage } from '../utils/errors';
+
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  0: SpeechRecognitionAlternativeLike;
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+interface BrowserSpeechRecognitionConstructor {
+  new (): SpeechRecognitionLike;
+}
+
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+}
 
 interface UseVoiceInputOptions {
   onTranscript: (text: string) => void;
@@ -14,7 +53,7 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const shouldKeepListeningRef = useRef(false);
   const seedTextRef = useRef('');
@@ -29,7 +68,8 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
   const startRecording = useCallback(async ({ initialText = '', separator = ' ' }: StartRecordingOptions = {}) => {
     setError(null);
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognitionWindow = window as SpeechRecognitionWindow;
+    const SpeechRecognition = recognitionWindow.SpeechRecognition || recognitionWindow.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setError('الإملاء الصوتي غير مدعوم في هذا المتصفح. جرّب Chrome أو Edge.');
       return;
@@ -51,7 +91,7 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
       recognition.lang = language;
       recognitionRef.current = recognition;
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
         let interim = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const t = event.results[i][0].transcript;
@@ -71,7 +111,7 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
         onTranscript(parts.join(separatorRef.current).trim());
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
         if (event.error !== 'no-speech') {
           setError(`حدث خطأ في التعرّف على الصوت: ${event.error}`);
           shouldKeepListeningRef.current = false;
@@ -98,8 +138,8 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
 
       recognition.start();
       setIsRecording(true);
-    } catch (err: any) {
-      setError(err.message || 'تعذّر الوصول إلى الميكروفون');
+    } catch (error) {
+      setError(getErrorMessage(error, 'تعذّر الوصول إلى الميكروفون'));
       shouldKeepListeningRef.current = false;
       stopStream();
     }

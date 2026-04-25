@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
 import { auth, db } from '../firebase';
+import { getErrorMessage } from '../utils/errors';
 
 interface AuthContextValue {
   user: User | null;
@@ -20,7 +21,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,17 +42,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     async register(name, email, password) {
       const credentials = await createUserWithEmailAndPassword(auth, email, password);
-      const user = credentials.user;
+      const currentUser = credentials.user;
 
       if (name.trim()) {
-        await updateProfile(user, { displayName: name.trim() });
+        await updateProfile(currentUser, { displayName: name.trim() });
       }
 
       // Store user data in Realtime Database
-      await set(ref(db, `users/${user.uid}`), {
-        uid: user.uid,
+      await set(ref(db, `users/${currentUser.uid}`), {
+        uid: currentUser.uid,
         name: name.trim(),
-        email: user.email,
+        email: currentUser.email,
         createdAt: new Date().toISOString(),
       });
     },
@@ -67,7 +68,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error(getErrorMessage('useAuth must be used within AuthProvider'));
   }
 
   return context;

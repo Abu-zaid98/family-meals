@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
 
 interface Props {
   mode: 'login' | 'register';
@@ -30,8 +31,8 @@ export function AuthModal({ mode: initialMode, onClose }: Props) {
       }
 
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'فشل التحقق من بيانات الحساب.');
+    } catch (error) {
+      setError(getErrorMessage(error, 'فشل التحقق من بيانات الحساب.'));
     } finally {
       setSubmitting(false);
     }
