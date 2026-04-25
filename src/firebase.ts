@@ -13,10 +13,6 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Check for required config to avoid runtime crashes
-if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-    console.warn("Firebase configuration is incomplete. Check your environment variables.");
-}
 
 // Initialize Firebase once
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
