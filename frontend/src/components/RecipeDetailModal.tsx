@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void;
   categories: string[];
   onUpdated: (recipe: Recipe) => void;
-  onDeleted: (id: string) => void;
+  onDeleted: () => void;
 }
 
 export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDeleted }: Props) {
@@ -72,7 +72,7 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
     setError(null);
     try {
       await recipeService.remove(recipe.id);
-      onDeleted(recipe.id);
+      onDeleted();
       setShowDeleteConfirm(false);
       onClose();
     } catch (err: any) {

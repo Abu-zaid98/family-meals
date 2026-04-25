@@ -7,7 +7,7 @@ import type { Recipe } from '../types';
 
 interface Props {
   onClose: () => void;
-  onCreated: (recipe: Recipe) => void;
+  onCreated: () => void;
   categories: string[];
 }
 
@@ -80,7 +80,7 @@ export function AddRecipeModal({ onClose, onCreated, categories }: Props) {
         ...form,
         category: normalizedCategory,
       });
-      onCreated(recipe);
+      onCreated();
       onClose();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'تعذّر إضافة الوصفة.');

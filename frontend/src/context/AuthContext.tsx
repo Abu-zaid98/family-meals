@@ -7,7 +7,8 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { ref, set } from 'firebase/database';
+import { auth, db } from '../lib/firebase';
 
 interface AuthContextValue {
   user: User | null;
@@ -40,9 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     async register(name, email, password) {
       const credentials = await createUserWithEmailAndPassword(auth, email, password);
+      const user = credentials.user;
+
       if (name.trim()) {
-        await updateProfile(credentials.user, { displayName: name.trim() });
+        await updateProfile(user, { displayName: name.trim() });
       }
+
+      // Store user data in Realtime Database
+      await set(ref(db, `users/${user.uid}`), {
+        uid: user.uid,
+        name: name.trim(),
+        email: user.email,
+        createdAt: new Date().toISOString(),
+      });
     },
     async logout() {
       await signOut(auth);

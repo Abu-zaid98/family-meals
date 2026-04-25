@@ -9,8 +9,9 @@ interface Props {
 /* Emoji pool for food variety — deterministic by title length */
 const FOOD_EMOJIS = ['🍲', '🥘', '🍛', '🥗', '🫕', '🍜', '🥙', '🍱', '🫔', '🍢'];
 
-function getFoodEmoji(title: string) {
-  return FOOD_EMOJIS[title.length % FOOD_EMOJIS.length];
+function getFoodEmoji(title: string = '') {
+  const safeTitle = title || '';
+  return FOOD_EMOJIS[safeTitle.length % FOOD_EMOJIS.length];
 }
 
 /* Gradient pool for the icon badge */
@@ -31,7 +32,7 @@ export function RecipeCard({ recipe, index, onClick }: Props) {
   const category = recipe.category || 'عام';
   const emoji = getFoodEmoji(recipe.title);
   const gradient = getGradient(index);
-  const dateStr = new Date(recipe.createdAt).toLocaleDateString('ar', {
+  const dateStr = new Date(recipe.createdAt || new Date()).toLocaleDateString('ar', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

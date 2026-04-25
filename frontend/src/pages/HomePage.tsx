@@ -53,7 +53,7 @@ function SearchIcon() {
 /* ─── HomePage ───────────────────────────────────────────────────────────────── */
 export function HomePage() {
   const { user, loading: authLoading, logout } = useAuth();
-  const { recipes, loading, error, addRecipe, updateRecipe, removeRecipe } = useRecipes();
+  const { recipes, loading, error } = useRecipes();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
@@ -70,8 +70,8 @@ export function HomePage() {
   const filtered = recipes.filter(r => {
     const q = search.toLowerCase();
     const matchesSearch =
-      r.title.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
+      (r.title || '').toLowerCase().includes(q) ||
+      (r.description || '').toLowerCase().includes(q) ||
       (r.category || 'عام').toLowerCase().includes(q);
     const matchesCategory =
       selectedCategory === 'الكل' || (r.category || 'عام') === selectedCategory;
@@ -370,14 +370,14 @@ export function HomePage() {
           recipe={selectedRecipe}
           categories={categories}
           onClose={() => setSelectedRecipe(null)}
-          onUpdated={(recipe) => { updateRecipe(recipe); setSelectedRecipe(recipe); }}
-          onDeleted={(id) => { removeRecipe(id); setSelectedRecipe(null); }}
+          onUpdated={(recipe) => { setSelectedRecipe(recipe); }}
+          onDeleted={() => { setSelectedRecipe(null); }}
         />
       )}
       {showAdd && (
         <AddRecipeModal
           onClose={() => setShowAdd(false)}
-          onCreated={addRecipe}
+          onCreated={() => setShowAdd(false)}
           categories={categories}
         />
       )}
