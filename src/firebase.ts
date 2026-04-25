@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getDatabase, Database } from "firebase/database";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,10 +13,24 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate required environment variables to prevent runtime errors
+const requiredKeys = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_PROJECT_ID', 'VITE_FIREBASE_DATABASE_URL'];
+const missingKeys = requiredKeys.filter(key => !import.meta.env[key]);
 
-// Initialize Firebase once
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+if (missingKeys.length > 0) {
+    console.error(`CRITICAL ERROR: Missing required Firebase environment variables: ${missingKeys.join(', ')}`);
+    console.warn("Please ensure your .env file or Vercel Environment Variables are correctly configured.");
+}
 
-export const auth = getAuth(app);
-export const db = getDatabase(app);
+// Initialize Firebase as a singleton
+let app: FirebaseApp;
+try {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+} catch (error) {
+    console.error("Firebase initialization failed:", error);
+    throw error;
+}
+
+export const auth: Auth = getAuth(app);
+export const db: Database = getDatabase(app);
 export default app;
