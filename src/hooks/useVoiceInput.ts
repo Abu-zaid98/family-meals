@@ -33,7 +33,8 @@ export function useVoiceInput({ onTranscript, language = 'ar' }: UseVoiceInputOp
   };
 
   const processAudioChunk = async (audioBlob: Blob) => {
-    if (audioBlob.size < 1000 || !STT_API_KEY || STT_API_KEY === 'your_api_key_here') return;
+    // Avoid processing very small chunks (less than 2KB) which are usually silence/noise
+    if (audioBlob.size < 2000 || !STT_API_KEY || STT_API_KEY === 'your_api_key_here') return;
 
     try {
       isProcessingRef.current = true;

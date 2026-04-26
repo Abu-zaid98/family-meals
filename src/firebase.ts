@@ -1,8 +1,6 @@
-/*----*/
-
-import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getDatabase, Database } from "firebase/database";
+import { getAuth, Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,11 +11,27 @@ const firebaseConfig = {
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Runtime validation to prevent cryptic Firebase errors
+if (!firebaseConfig.projectId || !firebaseConfig.databaseURL) {
+    console.error("Firebase Configuration is incomplete:", firebaseConfig);
+    throw new Error(
+        "Firebase Config Error: Project ID or Database URL is missing. " +
+        "Ensure your .env file has VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_DATABASE_URL."
+    );
+}
 
-// 👇 هذا هو المهم
-export const db = getDatabase(app);
-export const auth = getAuth(app);
+// Singleton pattern to handle Vite HMR (Hot Module Replacement)
+let app: FirebaseApp;
+if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
+// Initialize and export services
+export const db: Database = getDatabase(app);
+export const auth: Auth = getAuth(app);
+export default app;

@@ -1,58 +1,19 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useMemo } from 'react';
 import { useRecipes } from '../hooks/useRecipes';
 import { RecipeCard } from '../components/RecipeCard';
 import { RecipeDetailModal } from '../components/RecipeDetailModal';
 import { AddRecipeModal } from '../components/AddRecipeModal';
 import { AuthModal } from '../components/AuthModal';
 import { useAuth } from '../context/AuthContext';
+import { StatCard } from '../components/common/StatCard';
+import { SkeletonCard } from '../components/common/SkeletonCard';
+import { SearchIcon } from '../components/common/SearchIcon';
 import type { Recipe } from '../types';
 
-/* ─── Stat Card ─────────────────────────────────────────────────────────────── */
-function StatCard({ value, label, sub }: { value: ReactNode; label: string; sub: string }) {
-  return (
-    <div className="rounded-[1.6rem] border border-white/14 bg-white/10 p-5 shadow-[0_20px_50px_rgba(10,20,30,0.18)] backdrop-blur-xl">
-      <p className="text-xs font-bold tracking-wide text-white/65 uppercase">
-        {label}
-      </p>
-      <p className="mt-1.5 font-display text-5xl font-bold text-white tracking-tight">
-        {value}
-      </p>
-      <p className="mt-3 text-[11px] leading-relaxed text-white/70">
-        {sub}
-      </p>
-    </div>
-  );
-}
-
-/* ─── Skeleton Card ──────────────────────────────────────────────────────────── */
-function SkeletonCard() {
-  return (
-    <div className="overflow-hidden rounded-[1.8rem] border border-border bg-white">
-      <div className="h-1.5 skeleton" />
-      <div className="p-5 space-y-3">
-        <div className="h-4 w-1/3 rounded-full skeleton" />
-        <div className="h-6 w-3/4 rounded-xl skeleton" />
-        <div className="h-4 w-full rounded-xl skeleton" />
-        <div className="h-4 w-5/6 rounded-xl skeleton" />
-        <div className="mt-5 h-4 w-2/5 rounded-full skeleton" />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Search Icon ────────────────────────────────────────────────────────────── */
-function SearchIcon() {
-  return (
-    <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-stone opacity-60" width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 8a6 6 0 1 1 10.89 3.476l4.817 4.817a1 1 0 0 1-1.414 1.414l-4.816-4.816A6 6 0 0 1 2 8z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-/* ─── HomePage ───────────────────────────────────────────────────────────────── */
 export function HomePage() {
   const { user, loading: authLoading, logout } = useAuth();
   const { recipes, loading, error } = useRecipes();
+  
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
@@ -60,22 +21,28 @@ export function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState('الكل');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const categories = Array.from(
-    new Set(recipes.map(r => (r.category || 'عام').trim()).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b, 'ar'));
+  // Memoize categories to avoid recalculating on every search keystroke
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(recipes.map(r => (r.category || 'عام').trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [recipes]);
 
-  const categoryOptions = ['الكل', ...categories];
+  const categoryOptions = useMemo(() => ['الكل', ...categories], [categories]);
 
-  const filtered = recipes.filter(r => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      (r.title || '').toLowerCase().includes(q) ||
-      (r.description || '').toLowerCase().includes(q) ||
-      (r.category || 'عام').toLowerCase().includes(q);
-    const matchesCategory =
-      selectedCategory === 'الكل' || (r.category || 'عام') === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Memoize filtered recipes for performance
+  const filtered = useMemo(() => {
+    return recipes.filter(r => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        (r.title || '').toLowerCase().includes(q) ||
+        (r.description || '').toLowerCase().includes(q) ||
+        (r.category || 'عام').toLowerCase().includes(q);
+      const matchesCategory =
+        selectedCategory === 'الكل' || (r.category || 'عام') === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [recipes, search, selectedCategory]);
 
   const openAddFlow = () => {
     if (!user) { setAuthMode('login'); return; }
@@ -107,7 +74,7 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Actions (Desktop & Mobile Unified) */}
+          {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {!authLoading && user ? (
               <>
@@ -128,16 +95,15 @@ export function HomePage() {
                       <path d="M8 2a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2H9v4a1 1 0 1 1-2 0V9H3a1 1 0 1 1 0-2h4V3a1 1 0 0 1 1-1z" />
                     </svg>
                     <span className="hidden sm:inline">أضف وصفة</span>
-                    <span className="sm:hidden text-base"></span>
                   </button>
 
                   <button
                     id="logout-btn"
                     onClick={() => setShowLogoutConfirm(true)}
-                    className="btn-ghost flex items-center justify-center rounded-full px-3 sm:px-4 py-2 text-xs font-bold bg-red-500"
+                    className="btn-ghost flex items-center justify-center rounded-full px-3 sm:px-4 py-2 text-xs font-bold"
                   >
                     <span className="hidden sm:inline">خروج</span>
-                    <span className="sm:hidden filter grayscale brightness-50" aria-hidden="true">
+                    <span className="sm:hidden" aria-hidden="true">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M6 2.75A1.75 1.75 0 0 1 7.75 1h3.5A1.75 1.75 0 0 1 13 2.75v10.5A1.75 1.75 0 0 1 11.25 15h-3.5A1.75 1.75 0 0 1 6 13.25V11.5a.75.75 0 0 1 1.5 0v1.75a.25.25 0 0 0 .25.25h3.5a.25.25 0 0 0 .25-.25V2.75a.25.25 0 0 0-.25-.25h-3.5a.25.25 0 0 0-.25.25V4.5A.75.75 0 0 1 6 4.5V2.75ZM2.22 8.53a.75.75 0 0 1 0-1.06l2.5-2.5a.75.75 0 0 1 1.06 1.06L4.56 7.25h4.69a.75.75 0 0 1 0 1.5H4.56l1.22 1.22a.75.75 0 1 1-1.06 1.06l-2.5-2.5Z" />
                       </svg>
@@ -163,7 +129,6 @@ export function HomePage() {
 
       {/* ── Hero ──────────────────────────────────────────────────────────────── */}
       <section className="relative px-4 pb-6 pt-8 sm:px-6">
-        {/* Ambient blobs */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="blob absolute -right-20 -top-12 h-64 w-64 bg-[rgba(240,192,96,0.22)]" />
           <div className="blob absolute -left-20 bottom-0 h-56 w-56 bg-[rgba(232,98,58,0.15)]" />
@@ -176,11 +141,9 @@ export function HomePage() {
             border: '1px solid rgba(255,255,255,0.14)',
           }}
         >
-          {/* Inner glow */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(240,192,96,0.18),transparent_30%)]" />
 
           <div className="relative grid gap-8 px-6 py-10 sm:px-10 lg:grid-cols-[1.3fr_0.9fr] lg:items-center">
-            {/* Left: copy */}
             <div>
               <p className="mb-3 text-[11px] font-bold tracking-[0.35em] text-sand animate-fadeUp">
                 ✦ وصفات العائلة
@@ -194,7 +157,6 @@ export function HomePage() {
                 شارك وصفتك بسرعة، استخدم الإملاء الصوتي بالعربية لكل حقل، واستعرض الوصفات بأسلوب بصري أهدأ وأكثر احترافية.
               </p>
 
-              {/* Feature pills */}
               <div className="mt-7 flex flex-wrap gap-2.5 animate-fadeUp stagger-3">
                 {['موقع عائلي للوصفات', 'أقسام وفلترة واضحة', 'إملاء صوتي عربي'].map(f => (
                   <div
@@ -206,7 +168,6 @@ export function HomePage() {
                 ))}
               </div>
 
-              {/* CTA – shown only when logged out */}
               {!authLoading && !user && (
                 <div className="mt-8 flex flex-wrap gap-3 animate-fadeUp stagger-4">
                   <button
@@ -227,7 +188,6 @@ export function HomePage() {
               )}
             </div>
 
-            {/* Right: stats */}
             <div className="grid gap-4 animate-fadeUp stagger-3">
               <StatCard
                 value={loading ? '—' : recipes.length}
@@ -247,7 +207,7 @@ export function HomePage() {
       {/* ── Main content ──────────────────────────────────────────────────────── */}
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
 
-        {/* Discovery Bar (Categories + Search) */}
+        {/* Discovery Bar */}
         {!loading && !error && (
           <div className="glass-panel mb-10 overflow-hidden rounded-4xl p-6 sm:p-8">
             <div className="flex flex-col gap-6">
@@ -261,7 +221,6 @@ export function HomePage() {
                 </div>
               </div>
 
-              {/* Category pills */}
               <div className="flex flex-wrap gap-2.5">
                 {categoryOptions.map(cat => (
                   <button
@@ -284,7 +243,6 @@ export function HomePage() {
                 ))}
               </div>
 
-              {/* Relocated Search Bar */}
               <div className="relative mt-2 animate-fadeIn stagger-2">
                 <SearchIcon />
                 <input
@@ -316,9 +274,9 @@ export function HomePage() {
               تعذّر تحميل الوصفات
             </h3>
             <p className="text-sm text-stone">{error}</p>
-            <p className="mt-2 text-xs text-stone">
-              تأكد أن الخادم الخلفي يعمل على{' '}
-              <code className="rounded bg-warm px-1.5 py-0.5">localhost:5000</code>
+            <p className="mt-4 text-xs text-stone/60 max-w-sm mx-auto leading-relaxed">
+              تأكد من اتصالك بالإنترنت ومن صحة إعدادات Firebase في ملف الـ .env. 
+              إذا استمرت المشكلة، يرجى مراجعة سجلات الـ Console.
             </p>
           </div>
         )}
@@ -355,7 +313,7 @@ export function HomePage() {
         )}
       </main>
 
-      {/* ── Footer ────────────────────────────────────────────────────────────── */}
+      {/* Footer */}
       <footer className="mt-20 border-t border-border py-10 text-center">
         <p className="text-base font-medium text-stone">
           🍳 وصفات العيلة
@@ -365,7 +323,7 @@ export function HomePage() {
         </p>
       </footer>
 
-      {/* ── Modals ────────────────────────────────────────────────────────────── */}
+      {/* Modals */}
       {selectedRecipe && (
         <RecipeDetailModal
           recipe={selectedRecipe}
@@ -385,7 +343,8 @@ export function HomePage() {
       {authMode && (
         <AuthModal mode={authMode} onClose={() => setAuthMode(null)} />
       )}
-      {/* ── Logout Confirmation Modal ────────────────────────────────────────── */}
+      
+      {/* Logout Confirmation */}
       {showLogoutConfirm && (
         <div
           className="fixed inset-0 z-60 flex items-center justify-center p-4 animate-fadeIn"

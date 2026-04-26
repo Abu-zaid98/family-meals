@@ -52,7 +52,7 @@ export function AddRecipeModal({ onClose, onCreated, categories }: Props) {
 
   const { isRecording, error: voiceError, startRecording, stopRecording } = useVoiceInput({
     onTranscript: handleTranscript,
-    language: 'ar-PS',
+    language: 'ar',
   });
 
   useEffect(() => {

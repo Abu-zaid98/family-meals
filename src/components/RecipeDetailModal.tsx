@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { recipeService } from '../services/recipeService';
+import { useVoiceInput } from '../hooks/useVoiceInput';
+import { VoiceButton } from './VoiceButton';
 import type { Recipe } from '../types';
 import { getErrorMessage } from '../utils/errors';
+
+type DictationField = 'title' | 'description' | 'ingredients' | 'steps' | null;
 
 interface Props {
   recipe: Recipe;
@@ -27,6 +31,48 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
     ingredients: recipe.ingredients,
     steps: recipe.steps,
   });
+
+  const [dictationField, setDictationField] = useState<DictationField>(null);
+  const activeFieldRef = useRef<DictationField>(null);
+
+  const handleTranscript = useCallback((text: string) => {
+    const field = activeFieldRef.current;
+    if (!field) return;
+
+    let nextValue = text;
+    if (field === 'ingredients' || field === 'steps') {
+      nextValue = text.replace(/\s*[،,]\s*/g, '\n').replace(/\n{2,}/g, '\n');
+    }
+
+    setForm(prev => ({ ...prev, [field]: nextValue }));
+  }, []);
+
+  const { isRecording, error: voiceError, startRecording, stopRecording } = useVoiceInput({
+    onTranscript: handleTranscript,
+    language: 'ar',
+  });
+
+  const startFieldDictation = async (field: DictationField) => {
+    if (!field) return;
+    if (isRecording) stopRecording();
+
+    activeFieldRef.current = field;
+    setDictationField(field);
+
+    const currentValue = form[field] || '';
+    const separator = currentValue.trim()
+      ? field === 'ingredients' || field === 'steps'
+        ? '\n'
+        : ' '
+      : '';
+
+    await startRecording({ initialText: currentValue, separator });
+  };
+
+  const stopFieldDictation = () => {
+    activeFieldRef.current = null;
+    stopRecording();
+  };
 
   const isOwner = user?.uid === recipe.userId;
   const visibleCategory = isEditing ? (isAddingCategory ? (customCategory || 'قسم جديد') : form.category) : (recipe.category || 'عام');
@@ -190,6 +236,18 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
                   {recipe.title}
                 </h2>
               )}
+              {isEditing && (
+                <div className="mt-2">
+                  <VoiceButton
+                    label="العنوان"
+                    isRecording={isRecording && dictationField === 'title'}
+                    isActive={dictationField === 'title'}
+                    onStart={() => void startFieldDictation('title')}
+                    onStop={stopFieldDictation}
+                    error={dictationField === 'title' ? voiceError : null}
+                  />
+                </div>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] sm:text-xs font-bold text-stone">
                 <span className="flex items-center gap-1.5 bg-warm text-amber-700 px-3 py-1.5 rounded-full border border-border/40 uppercase tracking-wide">
@@ -264,6 +322,18 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
                   "{recipe.description}"
                 </p>
               )}
+              {isEditing && (
+                <div className="mt-2">
+                  <VoiceButton
+                    label="الوصف"
+                    isRecording={isRecording && dictationField === 'description'}
+                    isActive={dictationField === 'description'}
+                    onStart={() => void startFieldDictation('description')}
+                    onStop={stopFieldDictation}
+                    error={dictationField === 'description' ? voiceError : null}
+                  />
+                </div>
+              )}
             </div>
           </section>
 
@@ -289,6 +359,18 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
                     ))}
                   </ul>
                 )}
+                {isEditing && (
+                  <div className="mt-2">
+                    <VoiceButton
+                      label="المقادير"
+                      isRecording={isRecording && dictationField === 'ingredients'}
+                      isActive={dictationField === 'ingredients'}
+                      onStart={() => void startFieldDictation('ingredients')}
+                      onStop={stopFieldDictation}
+                      error={dictationField === 'ingredients' ? voiceError : null}
+                    />
+                  </div>
+                )}
               </div>
             </section>
 
@@ -313,6 +395,18 @@ export function RecipeDetailModal({ recipe, onClose, categories, onUpdated, onDe
                         <p className="pt-1 text-stone leading-[1.8] text-[1.05rem]">{step}</p>
                       </div>
                     ))}
+                  </div>
+                )}
+                {isEditing && (
+                  <div className="mt-2">
+                    <VoiceButton
+                      label="الخطوات"
+                      isRecording={isRecording && dictationField === 'steps'}
+                      isActive={dictationField === 'steps'}
+                      onStart={() => void startFieldDictation('steps')}
+                      onStop={stopFieldDictation}
+                      error={dictationField === 'steps' ? voiceError : null}
+                    />
                   </div>
                 )}
               </div>
