@@ -1,44 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { getErrorMessage } from '../utils/errors';
 
-interface SpeechRecognitionAlternativeLike {
-  transcript: string;
-}
-
-interface SpeechRecognitionResultLike {
-  isFinal: boolean;
-  0: SpeechRecognitionAlternativeLike;
-}
-
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<SpeechRecognitionResultLike>;
-}
-
-interface SpeechRecognitionErrorEventLike {
-  error: string;
-}
-
-interface SpeechRecognitionLike {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-}
-
-interface BrowserSpeechRecognitionConstructor {
-  new (): SpeechRecognitionLike;
-}
-
-interface SpeechRecognitionWindow extends Window {
-  SpeechRecognition?: BrowserSpeechRecognitionConstructor;
-  webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
-}
-
 interface UseVoiceInputOptions {
   onTranscript: (text: string) => void;
   language?: string;
@@ -49,13 +11,18 @@ interface StartRecordingOptions {
   separator?: string;
 }
 
-export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInputOptions) {
+const STT_API_KEY = import.meta.env.VITE_STT_API_KEY;
+const STT_API_URL = import.meta.env.VITE_STT_API_URL || 'https://api.groq.com/openai/v1/audio/transcriptions';
+const STT_MODEL = import.meta.env.VITE_STT_MODEL || 'whisper-large-v3';
+
+export function useVoiceInput({ onTranscript, language = 'ar' }: UseVoiceInputOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const shouldKeepListeningRef = useRef(false);
+  const isProcessingRef = useRef(false);
+  
   const seedTextRef = useRef('');
   const separatorRef = useRef(' ');
   const finalTranscriptRef = useRef('');
@@ -65,89 +32,98 @@ export function useVoiceInput({ onTranscript, language = 'ar-PS' }: UseVoiceInpu
     streamRef.current = null;
   };
 
+  const processAudioChunk = async (audioBlob: Blob) => {
+    if (audioBlob.size < 1000 || !STT_API_KEY || STT_API_KEY === 'your_api_key_here') return;
+
+    try {
+      isProcessingRef.current = true;
+      const formData = new FormData();
+      
+      // Determine file extension based on mime type
+      const extension = audioBlob.type.includes('webm') ? 'webm' : 'mp4';
+      formData.append('file', audioBlob, `audio.${extension}`);
+      formData.append('model', STT_MODEL);
+      formData.append('language', language.split('-')[0]); // Whisper expects 'ar' not 'ar-PS'
+      formData.append('response_format', 'json');
+
+      const response = await fetch(STT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${STT_API_KEY}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const newText = result.text?.trim();
+
+      if (newText) {
+        finalTranscriptRef.current += (finalTranscriptRef.current ? separatorRef.current : '') + newText;
+        
+        const fullText = [
+          seedTextRef.current,
+          finalTranscriptRef.current,
+        ].filter(Boolean).join(separatorRef.current);
+
+        onTranscript(fullText);
+      }
+    } catch (err) {
+      console.error('STT Processing Error:', err);
+      // We don't necessarily want to stop recording on a single chunk failure
+      // unless it's a persistent auth error.
+    } finally {
+      isProcessingRef.current = false;
+    }
+  };
+
   const startRecording = useCallback(async ({ initialText = '', separator = ' ' }: StartRecordingOptions = {}) => {
     setError(null);
-
-    const recognitionWindow = window as SpeechRecognitionWindow;
-    const SpeechRecognition = recognitionWindow.SpeechRecognition || recognitionWindow.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setError('الإملاء الصوتي غير مدعوم في هذا المتصفح. جرّب Chrome أو Edge.');
+    
+    if (!STT_API_KEY || STT_API_KEY === 'your_api_key_here') {
+      setError('يرجى ضبط مفتاح API (VITE_STT_API_KEY) في ملف .env لتفعيل التعرف على الصوت.');
       return;
     }
 
     try {
-      if (!streamRef.current) {
-        streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      shouldKeepListeningRef.current = true;
       seedTextRef.current = initialText.trim();
       separatorRef.current = separator;
       finalTranscriptRef.current = '';
 
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = language;
-      recognitionRef.current = recognition;
+      // Check supported mime types
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : 'audio/mp4';
 
-      recognition.onresult = (event: SpeechRecognitionEventLike) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const t = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscriptRef.current += `${t.trim()} `;
-          } else {
-            interim += t;
-          }
-        }
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
 
-        const parts = [
-          seedTextRef.current,
-          finalTranscriptRef.current.trim(),
-          interim.trim(),
-        ].filter(Boolean);
-
-        onTranscript(parts.join(separatorRef.current).trim());
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
-        if (event.error !== 'no-speech') {
-          setError(`حدث خطأ في التعرّف على الصوت: ${event.error}`);
-          shouldKeepListeningRef.current = false;
-          stopStream();
-          setIsRecording(false);
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          processAudioChunk(event.data);
         }
       };
 
-      recognition.onend = () => {
-        if (!shouldKeepListeningRef.current) {
-          stopStream();
-          setIsRecording(false);
-          return;
-        }
-
-        try {
-          recognition.start();
-        } catch {
-          shouldKeepListeningRef.current = false;
-          stopStream();
-          setIsRecording(false);
-        }
-      };
-
-      recognition.start();
+      // Start recording and request data every 4 seconds for a "live" feel
+      recorder.start(4000); 
       setIsRecording(true);
-    } catch (error) {
-      setError(getErrorMessage(error, 'تعذّر الوصول إلى الميكروفون'));
-      shouldKeepListeningRef.current = false;
+    } catch (err) {
+      setError(getErrorMessage(err, 'تعذّر الوصول إلى الميكروفون. تأكد من إعطاء الصلاحيات اللازمة.'));
       stopStream();
     }
   }, [language, onTranscript]);
 
   const stopRecording = useCallback(() => {
-    shouldKeepListeningRef.current = false;
-    recognitionRef.current?.stop();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
     stopStream();
     setIsRecording(false);
   }, []);
